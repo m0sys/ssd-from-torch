@@ -1,16 +1,18 @@
 {
-    "name": "Mnist_LeNet",
+    "name": "SSD",
     "n_gpu": 1,
 
     "arch": {
-        "type": "MnistModel",
-        "args": {}
+        "type": "SSD300",
+        "args": {
+            "n_classes": 21
+        }
     },
     "data_loader": {
-        "type": "MnistDataLoader",
+        "type": "PascalVOCDataLoader",
         "args":{
-            "data_dir": "data/",
-            "batch_size": 128,
+            "data_dir": "/home/kmh/Documents/datasets/pascal",
+            "batch_size": 4,
             "shuffle": true,
             "validation_split": 0.1,
             "num_workers": 2
@@ -24,9 +26,9 @@
             "amsgrad": true
         }
     },
-    "loss": "nll_loss",
+    "loss": "MultiBoxLoss",
     "metrics": [
-        "accuracy", "top_k_acc"
+        "mAP"
     ],
     "lr_scheduler": {
         "type": "StepLR",
