@@ -207,4 +207,5 @@ def mAP(det_boxes, det_labels, det_scores, true_boxes, true_labels, true_difficu
         rev_label_map[c + 1]: v for c, v in enumerate(average_precisions.tolist())
     }
 
-    return average_precisions, mean_average_precision
+    ## return average_precisions, mean_average_precision
+    return mean_average_precision

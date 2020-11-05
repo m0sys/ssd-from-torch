@@ -9,7 +9,7 @@ from base import BaseModel
 from utils.util import find_jaccard_overlap, cxcy_to_xy, gcxgcy_to_cxcy
 from model._model import *
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+## device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class MnistModel(BaseModel):
@@ -120,7 +120,7 @@ class SSD300(BaseModel):
                                 [cx, cy, additional_scale, additional_scale]
                             )
 
-        prior_boxes = torch.FloatTensor(prior_boxes).to(device)  # (8732, 4)
+        prior_boxes = torch.FloatTensor(prior_boxes)  ## .to(device)  # (8732, 4)
         prior_boxes.clamp(0, 1)
         assert prior_boxes.shape == (8732, 4)
         return prior_boxes
@@ -175,7 +175,7 @@ class SSD300(BaseModel):
         return locs, cls_scores
 
     def detect_objects(
-        self, predicted_locs, predicted_scores, min_score, max_overlap, top_k
+        self, predicted_locs, predicted_scores, min_score, max_overlap, top_k, device
     ):
         """
         Decipher the 8732 locations and class scores (output of this SSD300) to detect objects.
@@ -211,6 +211,7 @@ class SSD300(BaseModel):
 
         assert n_priors == predicted_locs.size(1) == predicted_scores.size(1)
 
+        # TODO: Make this piece of code faster.
         for i in range(bs):
             decoded_locs = cxcy_to_xy(
                 gcxgcy_to_cxcy(predicted_locs[i], self.priors_cxcy)
@@ -238,7 +239,9 @@ class SSD300(BaseModel):
                 class_scores, sort_ind = class_scores.sort(dim=0, descending=True)
                 class_decoded_locs = class_decoded_locs[sort_ind]
 
-                suppress = self.nms(class_decoded_locs, max_overlap, n_above_min_score)
+                suppress = self.nms(
+                    class_decoded_locs, max_overlap, n_above_min_score, device
+                )
 
                 image_boxes.append(class_decoded_locs[1 - suppress])
                 image_labels.append(
@@ -270,7 +273,7 @@ class SSD300(BaseModel):
 
         return all_images_boxes, all_images_labels, all_images_scores
 
-    def nms(self, class_decoded_locs, max_overlap, n_above_min_score):
+    def nms(self, class_decoded_locs, max_overlap, n_above_min_score, device):
         """
         Non-Maximum Supreession of redundent predictions with an IOU greater than
         max_overlap.
@@ -292,3 +295,6 @@ class SSD300(BaseModel):
             suppress[box] = 0
 
         return suppress
+
+
+from torch.optim.lr_scheduler import StepLR

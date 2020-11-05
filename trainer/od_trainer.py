@@ -36,6 +36,9 @@ class ObjectDetectionTrainer(BaseTrainer):
         self.lr_scheduler = lr_scheduler
         self.log_step = int(np.sqrt(data_loader.batch_size))
 
+        if self.do_validation:
+            self.val_log_step = int(np.sqrt(valid_data_loader.batch_size))
+
         self.train_metrics = MetricTracker(
             "loss", *[m.__name__ for m in self.metric_ftns], writer=self.writer
         )
@@ -44,6 +47,7 @@ class ObjectDetectionTrainer(BaseTrainer):
         )
 
         # Init criterion.
+        self.model.priors_cxcy = self.model.priors_cxcy.to(self.device)
         self.criterion = criterion(priors_cxcy=self.model.priors_cxcy).to(self.device)
 
     def _train_epoch(self, epoch):
@@ -73,15 +77,6 @@ class ObjectDetectionTrainer(BaseTrainer):
             self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
             self.train_metrics.update("loss", loss.item())
 
-            ## with torch.no_grad:
-            ##   det_boxes_batch, det_lables_batch, det_scores_batch = self.model.detect_objects(
-            ##     pred_locs, pred_scores, min_score=0.01, max_overlap=0.45, top_k=200
-            ##   )
-
-            ##
-
-            ## for met in self.metric_ftns:
-            ##   self.train_metrics.update(met.__name__, met())
             if batch_idx % self.log_step == 0:
                 self.logger.debug(
                     "Train Epoch: {} {} Loss: {:.6f}".format(
@@ -119,18 +114,21 @@ class ObjectDetectionTrainer(BaseTrainer):
         self.model.eval()
         self.valid_metrics.reset()
 
-        det_boxes = []
-        det_labels = []
-        det_scores = []
-        true_boxes = []
-        true_labels = []
-        true_difficulties = []
+        ## det_boxes = []
+        ## det_labels = []
+        ## det_scores = []
+        ## true_boxes = []
+        ## true_labels = []
+        ## true_difficulties = []
 
         with torch.no_grad():
             for batch_idx, (images, boxes, labels, difficulties) in enumerate(
                 self.valid_data_loader
             ):
                 images = images.to(self.device)
+                boxes = [b.to(self.device) for b in boxes]
+                labels = [l.to(self.device) for l in labels]
+                difficulties = [d.to(self.device) for d in difficulties]
 
                 pred_locs, pred_scores = self.model(images)
                 loss = self.criterion(pred_locs, pred_scores, boxes, labels)
@@ -140,10 +138,61 @@ class ObjectDetectionTrainer(BaseTrainer):
                 )
                 self.valid_metrics.update("loss", loss.item())
 
-                ## det_boxes_batch, det_labels
+                ## (
+                ##     det_boxes_batch,
+                ##     det_labels_batch,
+                ##     det_scores_batch,
+                ## ) = self.model.detect_objects(
+                ##     pred_locs,
+                ##     pred_scores,
+                ##     min_score=0.01,
+                ##     max_overlap=0.45,
+                ##     top_k=200,
+                ##     device=self.device,
+                ## )
 
-                for met in self.metric_ftns:
-                    self.valid_metrics.update(met.__name__, met())
+                ## det_boxes.extend(det_boxes_batch)
+                ## det_labels.extend(det_labels_batch)
+                ## det_scores.extend(det_scores_batch)
+                ## true_boxes.extend(boxes)
+                ## true_labels.extend(labels)
+                ## true_difficulties.extend(true_difficulties)
+
+                ## for met in self.metric_ftns:
+                ##     self.valid_metrics.update(
+                ##         met.__name__,
+                ##         met(
+                ##             det_boxes_batch,
+                ##             det_labels_batch,
+                ##             det_scores_batch,
+                ##             boxes,
+                ##             labels,
+                ##             difficulties,
+                ##         ),
+                ##     )
+                if batch_idx % self.val_log_step == 0:
+                    self.logger.debug(
+                        "Valid Epoch: {} {} Loss: {:.6f}".format(
+                            epoch, self._progress(batch_idx), loss.item()
+                        )
+                    )
+        ## for met in self.metric_ftns:
+        ##     self.valid_metrics.update(
+        ##         met.__name__,
+        ##         met(
+        ##             det_boxes,
+        ##             det_labels,
+        ##             det_scores,
+        ##             true_boxes,
+        ##             true_labels,
+        ##             true_difficulties,
+        ##         ),
+        ##     )
+
+        # add histogram of model parameters to the tensorboard
+        for name, p in self.model.named_parameters():
+            self.writer.add_histogram(name, p, bins="auto")
+        return self.valid_metrics.result()
 
     def _progress(self, batch_idx):
         base = "[{}/{} ({:.0f}%)]"
