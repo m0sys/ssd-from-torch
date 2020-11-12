@@ -218,8 +218,6 @@ class SSD300(BaseModel):
             image_labels = []
             image_scores = []
 
-            ## max_scores, best_label = predicted_scores[i].max(dim=1)
-
             for c in range(1, self.n_classes):
                 class_scores = predicted_scores[i][:, c]
                 score_above_min_score = class_scores > min_score

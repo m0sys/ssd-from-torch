@@ -134,8 +134,6 @@ class ObjectDetectionTrainer(BaseTrainer):
                 )
                 self.valid_metrics.update("loss", loss.item())
 
-        ## for name, p in self.model.named_parameters():
-        ##     self.writer.add_histogram(name, p, bins="auto")
         return self.valid_metrics.result()
 
     def _progress(self, batch_idx):

@@ -4,12 +4,6 @@ import torch.nn.functional as F
 
 from utils.util import cxcy_to_xy, xy_to_cxcy, cxcy_to_gcxgcy, find_jaccard_overlap
 
-## device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-def nll_loss(output, target):
-    return F.nll_loss(output, target)
-
 
 class MultiBoxLoss(nn.Module):
     """

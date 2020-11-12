@@ -9,7 +9,6 @@ import model.model as module_arch
 from parse_config import ConfigParser
 from torch.backends import cudnn
 
-## from trainer import Trainer
 from trainer.od_trainer import ObjectDetectionTrainer
 
 cudnn.benchmark = True

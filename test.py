@@ -57,7 +57,6 @@ def main(config):
         true_labels = []
         true_difficulties = []
         for i, (images, boxes, labels, difficulties) in enumerate(tqdm(data_loader)):
-            ## data, target = data.to(device), target.to(device)
             images = images.to(device)
             boxes = [b.to(device) for b in boxes]
             labels = [l.to(device) for l in labels]
