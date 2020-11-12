@@ -48,7 +48,9 @@ class ObjectDetectionTrainer(BaseTrainer):
 
         # Init criterion.
         self.model.priors_cxcy = self.model.priors_cxcy.to(self.device)
-        self.criterion = criterion(priors_cxcy=self.model.priors_cxcy).to(self.device)
+        self.criterion = criterion(
+            priors_cxcy=self.model.priors_cxcy, device=self.device
+        ).to(self.device)
 
     def _train_epoch(self, epoch):
         """
@@ -61,16 +63,17 @@ class ObjectDetectionTrainer(BaseTrainer):
           A log that container average loss and metric in this epoch.
         """
         self.model.train()
-        self.train_metrics.reset()
+        ## self.train_metrics.reset()
 
         for batch_idx, (images, boxes, labels, _) in enumerate(self.data_loader):
             images = images.to(self.device)
             boxes = [b.to(self.device) for b in boxes]
             labels = [l.to(self.device) for l in labels]
 
-            self.optimizer.zero_grad()
             pred_locs, pred_scores = self.model(images)
+
             loss = self.criterion(pred_locs, pred_scores, boxes, labels)
+            self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
 
@@ -83,9 +86,9 @@ class ObjectDetectionTrainer(BaseTrainer):
                         epoch, self._progress(batch_idx), loss.item()
                     )
                 )
-                self.writer.add_image(
-                    "input", make_grid(images.cpu(), nrow=8, normalize=True)
-                )
+                ## self.writer.add_image(
+                ##     "input", make_grid(images.cpu(), nrow=8, normalize=True)
+                ## )
 
             if batch_idx == self.len_epoch:
                 break
@@ -170,12 +173,12 @@ class ObjectDetectionTrainer(BaseTrainer):
                 ##             difficulties,
                 ##         ),
                 ##     )
-                if batch_idx % self.val_log_step == 0:
-                    self.logger.debug(
-                        "Valid Epoch: {} {} Loss: {:.6f}".format(
-                            epoch, self._progress(batch_idx), loss.item()
-                        )
-                    )
+                ## if batch_idx % self.val_log_step == 0:
+                ##     self.logger.debug(
+                ##         "Valid Epoch: {} {} Loss: {:.6f}".format(
+                ##             epoch, self._progress(batch_idx), loss.item()
+                ##         )
+                ##     )
         ## for met in self.metric_ftns:
         ##     self.valid_metrics.update(
         ##         met.__name__,
@@ -190,8 +193,8 @@ class ObjectDetectionTrainer(BaseTrainer):
         ##     )
 
         # add histogram of model parameters to the tensorboard
-        for name, p in self.model.named_parameters():
-            self.writer.add_histogram(name, p, bins="auto")
+        ## for name, p in self.model.named_parameters():
+        ##     self.writer.add_histogram(name, p, bins="auto")
         return self.valid_metrics.result()
 
     def _progress(self, batch_idx):

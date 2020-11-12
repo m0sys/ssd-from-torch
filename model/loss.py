@@ -4,15 +4,11 @@ import torch.nn.functional as F
 
 from utils.util import cxcy_to_xy, xy_to_cxcy, cxcy_to_gcxgcy, find_jaccard_overlap
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+## device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def nll_loss(output, target):
     return F.nll_loss(output, target)
-
-
-def multibox_loss(output, target):
-    pass
 
 
 class MultiBoxLoss(nn.Module):
@@ -24,9 +20,10 @@ class MultiBoxLoss(nn.Module):
     (2) a confidence loss for the predicted class scores.
     """
 
-    def __init__(self, priors_cxcy, threshold=0.5, neg_pos_ratio=3, alpha=1.0):
+    def __init__(self, priors_cxcy, device, threshold=0.5, neg_pos_ratio=3, alpha=1.0):
         super().__init__()
         self.priors_cxcy = priors_cxcy
+        self.device = device
         self.priors_xy = cxcy_to_xy(priors_cxcy)
         self.threshold = threshold
         self.neg_pos_ratio = neg_pos_ratio
@@ -59,8 +56,8 @@ class MultiBoxLoss(nn.Module):
 
         assert npriors == predicted_locs.size(1) == predicted_scores.size(1)
 
-        true_locs = torch.zeros((bs, npriors, 4), dtype=torch.float).to(device)
-        true_clss = torch.zeros((bs, npriors), dtype=torch.long).to(device)
+        true_locs = torch.zeros((bs, npriors, 4), dtype=torch.float).to(self.device)
+        true_clss = torch.zeros((bs, npriors), dtype=torch.long).to(self.device)
         assert true_locs.shape == (bs, 8732, 4)
         assert true_clss.shape == (bs, 8732)
 
@@ -134,7 +131,9 @@ class MultiBoxLoss(nn.Module):
         _, prior_at_max_iou = iou_bboxes_priors.max(dim=1)
 
         # Fix situation #1
-        obj_at_max_iou[prior_at_max_iou] = torch.LongTensor(range(n_objs)).to(device)
+        obj_at_max_iou[prior_at_max_iou] = torch.LongTensor(range(n_objs)).to(
+            self.device
+        )
 
         # Fix situation #2.
         max_iou_for_each_prior[prior_at_max_iou] = 1.0
@@ -209,7 +208,7 @@ class MultiBoxLoss(nn.Module):
             torch.LongTensor(range(npriors))
             .unsqueeze(0)
             .expand_as(conf_loss_neg)
-            .to(device)
+            .to(self.device)
         )  # (N, 8732)
 
         hard_negs = hardness_ranks < n_hard_negs.unsqueeze(1)  # (N, 8732)

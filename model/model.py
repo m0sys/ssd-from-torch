@@ -3,13 +3,10 @@ from math import sqrt
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-from torch.nn.modules import utils
 
 from base import BaseModel
 from utils.util import find_jaccard_overlap, cxcy_to_xy, gcxgcy_to_cxcy
 from model._model import *
-
-## device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class MnistModel(BaseModel):
@@ -167,8 +164,6 @@ class SSD300(BaseModel):
             conv10_2_feats,
             conv11_2_feats,
         )
-        ## print(f"cls_scores shape: {cls_scores.shape}")
-        ## print(f"n_classes: {self.n_classes}")
         assert locs.shape == (bs, 8732, 4)
         assert cls_scores.shape == (bs, 8732, self.n_classes)
 
@@ -295,6 +290,3 @@ class SSD300(BaseModel):
             suppress[box] = 0
 
         return suppress
-
-
-from torch.optim.lr_scheduler import StepLR
