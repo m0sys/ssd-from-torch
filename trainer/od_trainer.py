@@ -63,7 +63,7 @@ class ObjectDetectionTrainer(BaseTrainer):
           A log that container average loss and metric in this epoch.
         """
         self.model.train()
-        ## self.train_metrics.reset()
+        self.train_metrics.reset()
 
         for batch_idx, (images, boxes, labels, _) in enumerate(self.data_loader):
             images = images.to(self.device)
@@ -86,9 +86,9 @@ class ObjectDetectionTrainer(BaseTrainer):
                         epoch, self._progress(batch_idx), loss.item()
                     )
                 )
-                ## self.writer.add_image(
-                ##     "input", make_grid(images.cpu(), nrow=8, normalize=True)
-                ## )
+                self.writer.add_image(
+                    "input", make_grid(images.cpu(), nrow=8, normalize=True)
+                )
 
             if batch_idx == self.len_epoch:
                 break
@@ -117,13 +117,6 @@ class ObjectDetectionTrainer(BaseTrainer):
         self.model.eval()
         self.valid_metrics.reset()
 
-        ## det_boxes = []
-        ## det_labels = []
-        ## det_scores = []
-        ## true_boxes = []
-        ## true_labels = []
-        ## true_difficulties = []
-
         with torch.no_grad():
             for batch_idx, (images, boxes, labels, difficulties) in enumerate(
                 self.valid_data_loader
@@ -141,58 +134,6 @@ class ObjectDetectionTrainer(BaseTrainer):
                 )
                 self.valid_metrics.update("loss", loss.item())
 
-                ## (
-                ##     det_boxes_batch,
-                ##     det_labels_batch,
-                ##     det_scores_batch,
-                ## ) = self.model.detect_objects(
-                ##     pred_locs,
-                ##     pred_scores,
-                ##     min_score=0.01,
-                ##     max_overlap=0.45,
-                ##     top_k=200,
-                ##     device=self.device,
-                ## )
-
-                ## det_boxes.extend(det_boxes_batch)
-                ## det_labels.extend(det_labels_batch)
-                ## det_scores.extend(det_scores_batch)
-                ## true_boxes.extend(boxes)
-                ## true_labels.extend(labels)
-                ## true_difficulties.extend(true_difficulties)
-
-                ## for met in self.metric_ftns:
-                ##     self.valid_metrics.update(
-                ##         met.__name__,
-                ##         met(
-                ##             det_boxes_batch,
-                ##             det_labels_batch,
-                ##             det_scores_batch,
-                ##             boxes,
-                ##             labels,
-                ##             difficulties,
-                ##         ),
-                ##     )
-                ## if batch_idx % self.val_log_step == 0:
-                ##     self.logger.debug(
-                ##         "Valid Epoch: {} {} Loss: {:.6f}".format(
-                ##             epoch, self._progress(batch_idx), loss.item()
-                ##         )
-                ##     )
-        ## for met in self.metric_ftns:
-        ##     self.valid_metrics.update(
-        ##         met.__name__,
-        ##         met(
-        ##             det_boxes,
-        ##             det_labels,
-        ##             det_scores,
-        ##             true_boxes,
-        ##             true_labels,
-        ##             true_difficulties,
-        ##         ),
-        ##     )
-
-        # add histogram of model parameters to the tensorboard
         ## for name, p in self.model.named_parameters():
         ##     self.writer.add_histogram(name, p, bins="auto")
         return self.valid_metrics.result()

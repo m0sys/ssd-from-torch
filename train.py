@@ -1,4 +1,5 @@
 import argparse
+import numpy as np
 import collections
 import torch
 import data_loader.data_loaders as module_data
@@ -15,11 +16,11 @@ cudnn.benchmark = True
 
 
 # fix random seeds for reproducibility
-## SEED = 123
-## torch.manual_seed(SEED)
-## torch.backends.cudnn.deterministic = True
-## torch.backends.cudnn.benchmark = False
-## np.random.seed(SEED)
+SEED = 123
+torch.manual_seed(SEED)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+np.random.seed(SEED)
 
 
 def main(config):
